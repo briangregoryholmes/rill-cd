@@ -1,0 +1,68 @@
+kind: chart
+data:
+  metrics_sql: |
+    SELECT advertiser_name,
+      measure_2,
+      measure_1,
+      measure_4
+    FROM
+        customer_margin_dash
+    WHERE
+        __time >= '2023-03-07T00:30:00.000Z' AND __time < '2023-03-08T00:30:00.000Z'
+    ORDER BY
+        measure_2 DESC
+    LIMIT 10000
+
+vega_lite: |
+    {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "repeat": {
+      
+        "row": ["measure_2", "measure_1", "measure_4"],
+        "column": ["measure_4", "measure_1", "measure_2"]
+      },
+     
+      "spec": {
+   
+        "data": {"name": "table"},
+        "mark": "point",
+        "params": [
+          {
+            "name": "brush",
+            "select": {
+              "type": "interval",
+              "resolve": "union",
+              "on": "[pointerdown[event.shiftKey], window:pointerup] > window:pointermove!",
+              "translate": "[pointerdown[event.shiftKey], window:pointerup] > window:pointermove!",
+              "zoom": "wheel![event.shiftKey]"
+            }
+          },
+          {
+            "name": "grid",
+            "select": {
+              "type": "interval",
+              "resolve": "global",
+              "translate": "[pointerdown[!event.shiftKey], window:pointerup] > window:pointermove!",
+              "zoom": "wheel![!event.shiftKey]"
+            },
+            "bind": "scales"
+          }
+        ],
+        "encoding": {
+          "x": {"field": {"repeat": "column"}, "type": "quantitative"},
+          "y": {
+            "field": {"repeat": "row"},
+            "type": "quantitative",
+            "axis": {"minExtent": 30}
+          },
+          "color": {
+            "condition": {
+              "param": "brush",
+              "field": "advertiser_name",
+              "type": "nominal"
+            },
+            "value": "grey"
+          }
+        }
+      }
+    }
